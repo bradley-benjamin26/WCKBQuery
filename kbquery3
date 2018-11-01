@@ -1,0 +1,103 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+import requests
+import re
+import string
+import time
+import xml.etree.ElementTree as ET
+
+inputFile  = input("Input File: ")
+outputFile = input("Name of file to save results: ")
+queryType = input('What are you searching on? ISSN, ISBN, OCN, or Title: ')
+key = 'ahtH1Z7m1WW97DwsXtCekXe5EKqyyKwT0cikOdeVKhXcyofx6MKS3ISnzMrIFW4NxOKvZG1nF5mAnzuq'
+ns = {'kb' : 'http://worldcat.org/kb', 'atom' : 'http://www.w3.org/2005/Atom', 'os' : 'http://a9.com/-/spec/opensearch/1.1/'}
+collectionID = input("To search in a particular collection, enter its ID otherwise type 'no': ")
+#ns variable is used for namespaces for the XML that the KB API returns
+
+def valueCheck(value, newVar):
+	if value is None:
+		newVar = "None"
+	else:
+		newVar = value.text
+
+
+if queryType == 'ISSN':
+	searcher = 'issn='
+elif queryType == 'ISBN':
+	searcher = 'isbn='
+elif queryType == 'Title':
+	searcher = "title="
+elif queryType == 'OCN':
+	searcher = 'oclcnum='
+else:
+	searcher = 'q='	
+	
+if collectionID == 'no':
+	collectionSearch = ''
+else:
+	collectionSearch = "collection_uid="+collectionID
+
+with open(inputFile, 'r') as f:
+	with open(outputFile, 'a+') as o:
+		o.write('number'+'	'+'title' + '	' + 'ISBN or ISSN' + '	' + 'ocn' + '	' + 'Collection Name' + '	' + 'KB ID' +'	' + 'coverage'+ '	' +'Search Term'+'	'+'\n')
+		termCount = 0
+		for terms in f:
+			if queryType == 'Title':
+				term = '"'+terms.strip()+'"'
+			else:
+				term = terms.strip()
+			termCount +=1
+			print('Search number: ' +str(termCount)+'    Search term: '+term)
+			if term == '\n':
+				o.write('blank'+'\n')
+				print('no search term')
+			else:			
+				url ='http://worldcat.org/webservices/kb/rest/entries/search?'+collectionSearch+'&'+searcher+term+'&'+'wskey='+key
+				print(url)
+				r = requests.get(url.strip()).text
+				results = r.encode('utf-8')
+				root = ET.fromstring(results)
+				resultCheck = root.find('os:totalResults', ns)
+				emptyCheck = resultCheck.text
+				if emptyCheck == "0":
+					o.write(term + ' not found' + '\n')
+					print(term + ' not found')
+				else:						
+					entryLoopNumber = 0
+					for entry in root.findall('atom:entry', ns):
+						entryLoopNumber +=1
+						numb =str(termCount)+'.'+str(entryLoopNumber)
+						titleText = entry.find('atom:title', ns)
+						if titleText is None:
+							title = "No title"
+						else:
+							title = titleText.text
+						ocnText = entry.find('kb:oclcnum', ns)
+						if ocnText is None:
+							ocn = "no OCN"
+						else:
+							ocn = ocnText.text
+						covText = entry.find('kb:coverage', ns)
+						if covText is None:
+							cov = "no coverage"
+						else:
+							cov = covText.text
+						coll = entry.find('kb:collection_name', ns).text
+						issnCheck = entry.find('kb:issn', ns)
+						if issnCheck is None:
+							isbnCheck = entry.find('kb:isbn', ns)
+							if isbnCheck is None:
+								sn = "No Standard number found"
+							else:
+								sn = isbnCheck.text
+						else:
+							sn = issnCheck.text
+						uidText = entry.find('kb:entry_uid', ns)
+						if uidText is None:
+							uid = "no KB ID"
+						else:
+							uid = uidText.text
+						data = numb+'	'+title+'	'+sn+'	'+ocn+'	'+coll+'	'+uid+'	'+cov+'	'+term+'	'+'\n'
+						print(data)
+						o.write(data)
