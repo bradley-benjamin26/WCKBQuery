@@ -10,17 +10,13 @@ import xml.etree.ElementTree as ET
 inputFile  = input("Input File: ")
 outputFile = input("Name of file to save results: ")
 queryType = input('What are you searching on? ISSN, ISBN, OCN, or Title: ')
-key = 'ahtH1Z7m1WW97DwsXtCekXe5EKqyyKwT0cikOdeVKhXcyofx6MKS3ISnzMrIFW4NxOKvZG1nF5mAnzuq'
-ns = {'kb' : 'http://worldcat.org/kb', 'atom' : 'http://www.w3.org/2005/Atom', 'os' : 'http://a9.com/-/spec/opensearch/1.1/'}
 collectionID = input("To search in a particular collection, enter its ID otherwise type 'no': ")
+
+#Add your API key below, assigned to the "key" variable
+
+key = ''
+ns = {'kb' : 'http://worldcat.org/kb', 'atom' : 'http://www.w3.org/2005/Atom', 'os' : 'http://a9.com/-/spec/opensearch/1.1/'}
 #ns variable is used for namespaces for the XML that the KB API returns
-
-def valueCheck(value, newVar):
-	if value is None:
-		newVar = "None"
-	else:
-		newVar = value.text
-
 
 if queryType == 'ISSN':
 	searcher = 'issn='
