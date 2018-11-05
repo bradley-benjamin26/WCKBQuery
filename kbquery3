@@ -62,6 +62,7 @@ with open(inputFile, 'r') as f:
 				resultCheck = root.find('os:totalResults', ns)
 				emptyCheck = resultCheck.text
 				if emptyCheck == "0":
+					#if a single query returns 0 results, the script will write that the particular search term was no found
 					o.write(term + ' not found' + '\n')
 					print(term + ' not found')
 				else:						
