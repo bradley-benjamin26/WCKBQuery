@@ -27,19 +27,27 @@ Open your terminal/command line and navigate to the folder with the script. Call
 python3 kbquery3.py
 ```
 The script will now start. First, the script will ask you to list the file you're running the search with:
+
 >Input File:
+
 Simply list the name of the text file you just created:
+
 >Input File: issnsToBeSearched.txt
 
 Next the script will ask you the name the file you want the results to be saved to. You do not need to create a file yourself before running the script; it will create it for you in the directory:
+
 >Name of file to save results: myOutput.tsv
 
 Now it will ask what you're searching on:
+
 >What are you searching on? ISSN, ISBN, OCN, or Title?:
+
 Input which you want to search on. This performs the kind of search the script runs. If what you enter isn't an exact match (for example you enter issn or something else entirely), the script will use the full-text query searcher rather than one of the above, specific searchers.
 
 Finally, the script will ask if you want to search within a particular KB collection or if you want to search across everything you have selected in the KB:
+
 >To search in a particular collection, enter its ID otherwise type 'no':
+
 You can find the collection IDs under the properties tab for a collection within WorldShare Collection Manager.
 
 Once all that is completed, the script will begin running. The terminal will display each URL it creates for each query and display the results. While it does that, it is also writing the results as a .tsv to the output file.
@@ -52,19 +60,19 @@ The file should be formatted as a table seperated values (tsv) file (whether or 
 The file contains 8 columns:
 
 1. number
-  -This column tells you where this search results falls within the search. For example number 1.1 is the first search term and its first search result; 1.2 is the first search term and the second search result; and 2.1 is the second search term and its first search result.
-  -The number column helps you understand how many results were returned for each search term.
+   - This column tells you where this search results falls within the search. For example number 1.1 is the first search term and its first search result; 1.2 is the first search term and the second search result; and 2.1 is the second search term and its first search result.
+   - The number column helps you understand how many results were returned for each search term.
 2. title
-  -This column contains the title of the resource in the KB collection
+   - This column contains the title of the resource in the KB collection
 3. ISBN or ISSN
-  -This column records the ISBN or ISSN found for the title. If none is found, the field will say that list that no standard number was found.
+   - This column records the ISBN or ISSN found for the title. If none is found, the field will say that list that no standard number was found.
 4. ocn
-  -The records the primary OCLC number for the KB record. This is the OCLC number listed as "OCN" and "override" in the Collection Manager interface. This is note a grouped OCN.
+   - The records the primary OCLC number for the KB record. This is the OCLC number listed as "OCN" and "override" in the Collection Manager interface. This is note a grouped OCN.
 5. Collection Name
-  -Name of the collection the particular item record is in.
+   - Name of the collection the particular item record is in.
 6. KB ID
-  -This field is for the title ID for the item in the KB, if one is found.
+   - This field is for the title ID for the item in the KB, if one is found.
 7. Coverage
-  -This field lists the coverage information for the item. For example, if you have full text coverage from 2000-2017 it will read "fulltext@2000~2017".
+   - This field lists the coverage information for the item. For example, if you have full text coverage from 2000-2017 it will read "fulltext@2000~2017".
 8. Search Term
-  -Lastly, the output includes the search term. This can help you better group and understand the results, but it can also be helpful for identify a problem if odd search results are turned.
+   - Lastly, the output includes the search term. This can help you better group and understand the results, but it can also be helpful for identify a problem if odd search results are turned.
