@@ -36,15 +36,20 @@ else:
 
 with open(inputFile, 'r') as f:
 	with open(outputFile, 'a+') as o:
+		#headers for the output file
 		o.write('number'+'	'+'title' + '	' + 'ISBN or ISSN' + '	' + 'ocn' + '	' + 'Collection Name' + '	' + 'KB ID' +'	' + 'coverage'+ '	' +'Search Term'+'	'+'\n')
 		termCount = 0
 		for terms in f:
+			# if you are running a query search, the script will strip out leading spaces, just in case, and will check for ampersands and escape ampersands 
 			if queryType == 'Title':
 				term = '"'+terms.strip()+'"'
+				if "&" in term:
+					term = term.replace('&', '&amp;')
 			else:
 				term = terms.strip()
 			termCount +=1
 			print('Search number: ' +str(termCount)+'    Search term: '+term)
+			#if there is no search term (for example, you're searching on ISSN and every title does not have one, the script will write 'blank' for that title in the output
 			if term == '\n':
 				o.write('blank'+'\n')
 				print('no search term')
@@ -61,6 +66,7 @@ with open(inputFile, 'r') as f:
 					print(term + ' not found')
 				else:						
 					entryLoopNumber = 0
+					#if results are returned, the script iterates through each result to find and write the metadata from each result
 					for entry in root.findall('atom:entry', ns):
 						entryLoopNumber +=1
 						numb =str(termCount)+'.'+str(entryLoopNumber)
@@ -95,5 +101,6 @@ with open(inputFile, 'r') as f:
 						else:
 							uid = uidText.text
 						data = numb+'	'+title+'	'+sn+'	'+ocn+'	'+coll+'	'+uid+'	'+cov+'	'+term+'	'+'\n'
+						#the results written to the output file will also be printed to the terminal so you can see what is being returned
 						print(data)
 						o.write(data)
