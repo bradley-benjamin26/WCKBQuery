@@ -4,18 +4,32 @@
 import requests
 import re
 import string
+import csv
 import xml.etree.ElementTree as ET
 
 inputFile  = input("Input File: ")
 outputFile = input("Name of file to save results: ")
 queryType = input('What are you searching on? ISSN, ISBN, OCN, or Title: ')
 collectionID = input("To search in a particular collection, enter its ID otherwise type 'no': ")
+fieldNames = ["publication_title", "print_identifier", "online_identifier", "date_first_issue_online", "num_first_vol_online", "num_first_issue_online", "date_last_issue_online", "num_last_vol_online", "num_last_issue_online", "title_url", "first_author", "title_id", "embargo_info", "coverage_depth",	"coverage_notes", "publisher_name", "location", "title_notes", "staff_notes", "vendor_id", "oclc_collection_name", "oclc_collection_id", "oclc_entry_id", "oclc_linkscheme", "oclc_number",	"ACTION"]
 
 #Add your API key below, assigned to the "key" variable
 
 key = ''
 ns = {'kb' : 'http://worldcat.org/kb', 'atom' : 'http://www.w3.org/2005/Atom', 'os' : 'http://a9.com/-/spec/opensearch/1.1/'}
 #ns variable is used for namespaces for the XML that the KB API returns
+
+def findInKBART1():
+	if term == kbartSearcher1:
+		o.write(term + ' not selected' + '\n')
+		print(term + ' not selected')
+	elif term == kbartSearcher2:
+		o.write(term + ' not selected' + '\n')
+		print(term + ' not selected')
+def findInKBART2():
+	if term == kbartSearcher:
+		o.write(term + ' not selected' + '\n')
+		print(term + ' not selected')
 
 if queryType == 'ISSN':
 	searcher = 'issn='
@@ -61,9 +75,45 @@ with open(inputFile, 'r') as f:
 				resultCheck = root.find('os:totalResults', ns)
 				emptyCheck = resultCheck.text
 				if emptyCheck == "0":
-					#if a single query returns 0 results, the script will write that the particular search term was no found
-					o.write(term + ' not found' + '\n')
-					print(term + ' not found')
+				#if 0 results are turned, the script will then check to see if a collection ID was provided. If one is, the script will pull the KBART file for that collection to then see if the title is available in that collection but simply not selected.
+					if collectionID == "no":
+						o.write(term + ' not found' + '\n')
+						print(term + ' not found')
+					else:
+						collectionURL = 'http://worldcat.org/webservices/kb/rest/collections/'+collectionID+'?wskey='+key
+						print(collectionURL)
+						collectionResponse = requests.get(collectionURL.strip()).text
+						collectionResults = collectionResponse.encode('utf-8')
+						collectionResultsRoot = ET.fromstring(collectionResults)
+						#Xpath may need to be fixed. Likely may need to do xpath just with attribute and value...?
+						getLink = collectionResultsRoot.find('./atom:link[@title="kbart file"]', ns)
+						print ('getLink = ' + str(getLink))
+						link = getLink.get('href')
+						print ('link = ' + link)
+						fullLink = link + '?wskey='+key
+						print('fullLink = ' + fullLink)
+						kbartRequest = requests.get(fullLink.strip()).text
+						kbartTitle = collectionID+'kbart.txt'
+						kbartWriter = open(kbartTitle, 'w+')
+						kbartWriter.write(kbartRequest)
+						kbartWriter.close()
+						kbartData = open(kbartTitle, 'r')
+						tsvreader = csv.DictReader(kbartData, delimiter='\t')
+						for row in tsvreader:
+							if queryType == 'ISSN':
+								kbartSearcher1 = row['online_identifier']
+								kbartSearcher2 = row['print_identifier']
+								findInKBART1()
+							elif queryType == 'ISBN':
+								kbartSearcher1 = row['online_identifier']
+								kbartSearcher2 = row['print_identifier']
+								findInKBART1()
+							elif queryType == 'Title':
+								kbartSearcher = row['publication_title']
+								findInKBART2()
+							elif queryType == 'OCN':
+								kbartSearcher = row["oclc_number"]
+								findInKBART2()
 				else:						
 					entryLoopNumber = 0
 					#if results are returned, the script iterates through each result to find and write the metadata from each result
