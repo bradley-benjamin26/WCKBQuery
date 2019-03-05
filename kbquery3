@@ -18,19 +18,6 @@ fieldNames = ["publication_title", "print_identifier", "online_identifier", "dat
 key = ''
 ns = {'kb' : 'http://worldcat.org/kb', 'atom' : 'http://www.w3.org/2005/Atom', 'os' : 'http://a9.com/-/spec/opensearch/1.1/'}
 #ns variable is used for namespaces for the XML that the KB API returns
-
-def findInKBART1():
-	if term == kbartSearcher1:
-		o.write(term + ' not selected' + '\n')
-		print(term + ' not selected')
-	elif term == kbartSearcher2:
-		o.write(term + ' not selected' + '\n')
-		print(term + ' not selected')
-def findInKBART2():
-	if term == kbartSearcher:
-		o.write(term + ' not selected' + '\n')
-		print(term + ' not selected')
-
 if queryType == 'ISSN':
 	searcher = 'issn='
 elif queryType == 'ISBN':
@@ -49,11 +36,9 @@ else:
 
 with open(inputFile, 'r') as f:
 	with open(outputFile, 'a+') as o:
-		#headers for the output file
-		o.write('number'+'	'+'title' + '	' + 'ISBN or ISSN' + '	' + 'ocn' + '	' + 'Collection Name' + '	' + 'KB ID' +'	' + 'coverage'+ '	' +'Search Term'+'	'+'\n')
+		o.write('number'+'	'+'status'+'	'+'title' + '	' + 'ISBN or ISSN' + '	' + 'ocn' + '	' + 'Collection Name' + '	' + 'KB ID' +'	' + 'coverage'+ '	' +'Search Term'+'	'+'\n')
 		termCount = 0
 		for terms in f:
-			# if you are running a query search, the script will strip out leading spaces, just in case, and will check for ampersands and escape ampersands 
 			if queryType == 'Title':
 				term = '"'+terms.strip()+'"'
 				if "&" in term:
@@ -62,12 +47,11 @@ with open(inputFile, 'r') as f:
 				term = terms.strip()
 			termCount +=1
 			print('Search number: ' +str(termCount)+'    Search term: '+term)
-			#if there is no search term (for example, you're searching on ISSN and every title does not have one, the script will write 'blank' for that title in the output
 			if term == '\n':
 				o.write('blank'+'\n')
 				print('no search term')
 			else:			
-				url ='http://worldcat.org/webservices/kb/rest/entries/search?'+collectionSearch+'&'+searcher+term+'&'+'wskey='+key
+				url ='http://worldcat.org/webservices/kb/rest/entries/search?'+collectionSearch+'&'+searcher+term+'&wskey='+key
 				print(url)
 				r = requests.get(url.strip()).text
 				results = r.encode('utf-8')
@@ -75,52 +59,69 @@ with open(inputFile, 'r') as f:
 				resultCheck = root.find('os:totalResults', ns)
 				emptyCheck = resultCheck.text
 				if emptyCheck == "0":
-				#if 0 results are turned, the script will then check to see if a collection ID was provided. If one is, the script will pull the KBART file for that collection to then see if the title is available in that collection but simply not selected.
 					if collectionID == "no":
 						o.write(term + ' not found' + '\n')
 						print(term + ' not found')
 					else:
-						collectionURL = 'http://worldcat.org/webservices/kb/rest/collections/'+collectionID+'?wskey='+key
-						print(collectionURL)
-						collectionResponse = requests.get(collectionURL.strip()).text
-						collectionResults = collectionResponse.encode('utf-8')
-						collectionResultsRoot = ET.fromstring(collectionResults)
-						#Xpath may need to be fixed. Likely may need to do xpath just with attribute and value...?
-						getLink = collectionResultsRoot.find('./atom:link[@title="kbart file"]', ns)
-						print ('getLink = ' + str(getLink))
-						link = getLink.get('href')
-						print ('link = ' + link)
-						fullLink = link + '?wskey='+key
-						print('fullLink = ' + fullLink)
-						kbartRequest = requests.get(fullLink.strip()).text
-						kbartTitle = collectionID+'kbart.txt'
-						kbartWriter = open(kbartTitle, 'w+')
-						kbartWriter.write(kbartRequest)
-						kbartWriter.close()
+						#if a collection ID is provided and a title is not found to be selected, this triggers the script to pull the full KBART
+						#and then search to see if the title is not in the collection at all or simply not selected
+						if completeKbartCheck == 0:
+							collectionURL = 'http://worldcat.org/webservices/kb/rest/collections/'+collectionID+'?wskey='+key
+							print(collectionURL)
+							collectionResponse = requests.get(collectionURL.strip()).text
+							collectionResults = collectionResponse.encode('utf-8')
+							collectionResultsRoot = ET.fromstring(collectionResults)
+							#Xpath may need to be fixed. Likely may need to do xpath just with attribute and value...?
+							getLink = collectionResultsRoot.find('./atom:link[@title="kbart file"]', ns)
+							link = getLink.get('href')
+							kbartTitle = collectionID+'kbart.txt'
+							fullLink = link + '?wskey='+key
+							print(fullLink)
+							print("downloading: " + kbartTitle)
+							kbartRequest = requests.get(fullLink.strip()).text
+							kbartTitle = collectionID+'kbart.txt'
+							kbartWriter = open(kbartTitle, 'w+')
+							kbartWriter.write(kbartRequest)
+							kbartWriter.close()
+						completeKbartCheck += 1
 						kbartData = open(kbartTitle, 'r')
+						#after writing KBART data to a file, the script then reads the KBART and tries to find a match based on the kind of query, ISSN, OCN, etc
 						tsvreader = csv.DictReader(kbartData, delimiter='\t')
+						matchFound = 'no'
 						for row in tsvreader:
 							if queryType == 'ISSN':
-								kbartSearcher1 = row['online_identifier']
-								kbartSearcher2 = row['print_identifier']
-								findInKBART1()
+								if term == row['online_identifier']:
+									matchFound = 'yes'
+								elif term == row['print_identifier']:
+									matchFound = 'yes'
 							elif queryType == 'ISBN':
-								kbartSearcher1 = row['online_identifier']
-								kbartSearcher2 = row['print_identifier']
-								findInKBART1()
+								if term == row['online_identifier']:
+									matchFound = 'yes'
+								elif term == row['print_identifier']:
+									matchFound = 'yes'
 							elif queryType == 'Title':
-								kbartSearcher = row['publication_title']
-								findInKBART2()
+								if term == row['publication_title']:
+									matchFound = 'yes'
 							elif queryType == 'OCN':
-								kbartSearcher = row["oclc_number"]
-								findInKBART2()
+								if term == row["oclc_number"]:
+									matchFound = 'yes'
+							else:
+								matchFound = 'no'
+						numb = str(termCount)
+						if matchFound == 'yes':
+							o.write(numb+'\t'+'not selected but available in global KB'+'\t\t\t\t\t\t\t'+term+'\n')
+							print(term + ' not selected')
+						elif matchFound == 'no':
+							o.write(numb+'\t'+'not available'+'\t\t\t\t\t\t\t'+term+'\n')
+							print(term + ' not available')
+				
 				else:						
 					entryLoopNumber = 0
-					#if results are returned, the script iterates through each result to find and write the metadata from each result
 					for entry in root.findall('atom:entry', ns):
 						entryLoopNumber +=1
 						numb =str(termCount)+'.'+str(entryLoopNumber)
 						titleText = entry.find('atom:title', ns)
+						status = 'selected'
 						if titleText is None:
 							title = "No title"
 						else:
@@ -150,7 +151,6 @@ with open(inputFile, 'r') as f:
 							uid = "no KB ID"
 						else:
 							uid = uidText.text
-						data = numb+'	'+title+'	'+sn+'	'+ocn+'	'+coll+'	'+uid+'	'+cov+'	'+term+'	'+'\n'
-						#the results written to the output file will also be printed to the terminal so you can see what is being returned
+						data = numb+'	'+status+'	'+title+'	'+sn+'	'+ocn+'	'+coll+'	'+uid+'	'+cov+'	'+term+'	'+'\n'
 						print(data)
 						o.write(data)
