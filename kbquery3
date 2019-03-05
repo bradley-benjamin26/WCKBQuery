@@ -12,6 +12,7 @@ outputFile = input("Name of file to save results: ")
 queryType = input('What are you searching on? ISSN, ISBN, OCN, or Title: ')
 collectionID = input("To search in a particular collection, enter its ID otherwise type 'no': ")
 fieldNames = ["publication_title", "print_identifier", "online_identifier", "date_first_issue_online", "num_first_vol_online", "num_first_issue_online", "date_last_issue_online", "num_last_vol_online", "num_last_issue_online", "title_url", "first_author", "title_id", "embargo_info", "coverage_depth",	"coverage_notes", "publisher_name", "location", "title_notes", "staff_notes", "vendor_id", "oclc_collection_name", "oclc_collection_id", "oclc_entry_id", "oclc_linkscheme", "oclc_number",	"ACTION"]
+completeKbartCheck = 0
 
 #Add your API key below, assigned to the "key" variable
 
